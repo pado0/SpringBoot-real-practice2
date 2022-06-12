@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,7 +36,7 @@ public class MemberApiController {
         member.setName(request.getName());
 
         Long id = memberService.join(member);
-        return new CreateMemberResponse(id);
+        return new CreateMemberResponse(id); // 요청으로 들어온 id 정보를 응답 dto를 통해 리턴한다
     }
 
     // 회원 수정 v2
@@ -43,10 +45,27 @@ public class MemberApiController {
         memberService.update(id, request.getName());
 
         Member findMember = memberService.findOne(id);
-        return new UpdateMemberResponse(findMember.getId(), findMember.getName());
-
+        return new UpdateMemberResponse(findMember.getId(), findMember.getName()); // 응답 dto에 값을 담아 리턴한다. json으로 뿌려진다.
     }
 
+    // 회원 조회 v1
+    // 모든 엔티티가 응답으로 노출된다. @JsonIgnore 어노테이션으로 엔티티 클래스에서 무시할 목록이나 속성을 직접 지정해주는 것은 최악의 방법이다. api가 이거 하나가 아니다.
+    @GetMapping("/api/v1/members")
+    public List<Member> membersV1(){
+        return memberService.findMembers();
+    }
+
+    // 회원 조회 v2: 별도의 DTO로 응답 분리
+    @GetMapping("/api/v2/members")
+    public Result membersV2(){
+        List<Member> findMembers = memberService.findMembers();
+
+        List<MemberDto> collect = findMembers.stream()
+                .map(m -> new MemberDto(m.getName()))
+                .collect(Collectors.toList());
+
+        return new Result(collect); //  어떤 형태가 될지 모르는 Result를 지네릭으로 정의해줌
+    }
 
     // 회원 등록 DTO
     @Data
@@ -73,6 +92,19 @@ public class MemberApiController {
     @AllArgsConstructor
     static class UpdateMemberResponse{
         private Long id;
+        private String name;
+    }
+
+    // 회원 조회 DTO
+    @Data
+    @AllArgsConstructor
+    static class Result<T> {
+        private T data;
+    }
+
+    @Data
+    @AllArgsConstructor
+    static class MemberDto{
         private String name;
     }
 }
