@@ -78,7 +78,7 @@ public class OrderApiController {
             //orderItems = order.getOrderItems(); // orderItems 엔티티 그대로 반환중. 다 dto로 바꾸기
 
             orderItems = order.getOrderItems().stream()
-                    .map(orderItem -> new OrderItemDto(orderItem))
+                    .map(OrderItemDto::new)
                     .collect(Collectors.toList());
         }
 
