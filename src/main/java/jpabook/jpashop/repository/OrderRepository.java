@@ -96,5 +96,22 @@ public class OrderRepository {
         return query.getResultList();
     }
 
+    // order를 가져오는 쿼리
+    // order를 조회하는데, 멤버랑 딜리버리를 조인해서 한 방 쿼리로 가져옴
+    // 여기서는 lazy 무시하고 db에서 값을 찔러 가져옴
+    // fetch는 jpa에만 있는 문법 > fetch join 강좌 다시보기
+    // 단 한 번의 쿼리밖에 안나감.
+    public List<Order> findAllWithMemberDelivery() {
+        return em.createQuery("select o from Order o" +
+                " join fetch o.member m" +
+                " join fetch o.delivery d", Order.class).getResultList();
+    }
+
+    // o는 dto에 매핑될 수가 없다.
+    public List<OrderSimpleQueryDto> findOrderDtos() {
+        return em.createQuery("select o from Order o" +
+                " join o.member m" +
+                " join o.delivery d", OrderSimpleQueryDto.class).getResultList();
+    }
 }
 
