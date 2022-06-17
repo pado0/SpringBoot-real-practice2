@@ -6,11 +6,14 @@ import jpabook.jpashop.domain.OrderItem;
 import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import jpabook.jpashop.repository.query.OrderQueryDto;
+import jpabook.jpashop.repository.query.OrderQueryRepository;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.validator.constraints.Mod11Check;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class OrderApiController {
 
     private final OrderRepository orderRepository;
+    private final OrderQueryRepository orderQueryRepository;
 
     // [총정리]
     // orderItems와 item 정보를 출력하고싶어
@@ -52,6 +56,50 @@ public class OrderApiController {
                 .map(o -> new OrderDto(o))
                 .collect(Collectors.toList());
 
+    }
+
+    @GetMapping("/api/v3/orders")
+    public List<OrderDto> orderV3(){
+        List<Order> orders = orderRepository.findAllWithItem();
+        return  orders.stream()
+                .map(o -> new OrderDto(o))
+                .collect(Collectors.toList());
+
+    }
+
+    @GetMapping("/api/v3.1/orders")
+    public List<OrderDto> orderV3_page(@RequestParam(value = "offset", defaultValue = "0") int offset,
+                                       @RequestParam(value = "limit", defaultValue = "100") int limit)
+    {
+
+        // 1. to one 관계를 가져옴
+        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+
+        // repository 쪽에 오프셋 설정하고,
+        // application.yml에  batch 세팅을 한다.
+        return  orders.stream()
+                .map(o -> new OrderDto(o))
+                .collect(Collectors.toList());
+
+    }
+
+    // orderDto를 참조해버리면,
+    // 레퍼지토리가 컨트롤러를 참조하게 돼버린다.
+    // 그래서 쿼리 따로만듦. 근데 애초에 orderDto를 분리하면 안됨..?
+    @GetMapping("/api/v4/orders")
+    public List<OrderQueryDto> orderV4(){
+        return orderQueryRepository.findOrderQueryDtos();
+
+    }
+
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> orderV5(){
+        return orderQueryRepository.findAllByDto_optimization();
+    }
+
+    @GetMapping("/api/v6/orders")
+    public List<OrderQueryDto> orderV6(){
+        return orderQueryRepository.findAllByDto_optimization();
     }
 
     @Data

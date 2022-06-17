@@ -2,6 +2,7 @@ package jpabook.jpashop.repository;
 
 import jpabook.jpashop.domain.Order;
 
+import jpabook.jpashop.repository.simplequery.OrderSimpleQueryDto;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
@@ -107,11 +108,38 @@ public class OrderRepository {
                 " join fetch o.delivery d", Order.class).getResultList();
     }
 
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery("select o from Order o" +
+                " join fetch o.member m" +
+                " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .getResultList();
+    }
+
     // o는 dto에 매핑될 수가 없다.
     public List<OrderSimpleQueryDto> findOrderDtos() {
         return em.createQuery("select o from Order o" +
                 " join o.member m" +
                 " join o.delivery d", OrderSimpleQueryDto.class).getResultList();
+    }
+
+//     distinct: db의 distinct 쿼리를 날려줄 뿐 아니라
+//     db의 distinct 로우 내 데이터가 모두 같아야 distinct로 필터링된다
+//     사용하지 않으면 1대 다 조인이므로 데이터베이스 로우가 증가한다.
+//     jpa의 disticnt는 앱에 데이터를 다 가져와서, order 객체 id가 같은 경우 중복을 제거해준다
+//     내가 원하는 필드만 딱딱 찍어주면 쿼리 한방에 원하는 데이터를 불러온다
+//     단점: 1대 다를 패치조인 하는 순간 페이징 처리가 불가하다..!
+
+    public List<Order> findAllWithItem() {
+        return em.createQuery("select o from Order o" +
+                " join fetch o.member m" +
+                " join fetch o.delivery d" +
+                " join fetch o.orderItems oi" +
+                " join fetch oi.item i", Order.class)
+                //.setFirstResult(1) // 여기서 페이징 처리가 되지 않음. Limit offset이 보이지 않음
+                //.setMaxResults(100)
+                .getResultList();
     }
 }
 
